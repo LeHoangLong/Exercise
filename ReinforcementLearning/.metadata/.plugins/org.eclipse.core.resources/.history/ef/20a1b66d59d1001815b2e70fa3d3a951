@@ -1,0 +1,89 @@
+import Track as tr
+import numpy as np
+
+
+track = tr.Track()
+shape = list(track.getTrackShape())
+shape.append(7)
+shape.append(7)
+shape.append(2)
+pi = np.random.randint(-1, 2, shape)
+
+shape = list(track.getTrackShape())
+shape.append(7)
+shape.append(7)
+shape.append(3)
+shape.append(3)
+
+gamma = 0.9
+
+
+Q = np.random.randn(shape[0], shape[1], shape[2], shape[3], shape[4], shape[5])
+C = np.zeros(shape)
+
+
+number_of_actions = np.size(Q, -1) * np.size(Q, -2)
+
+trajectory = []
+
+        
+epsilon = 1.0
+
+count = 0
+for episodes in range(5000):
+    print("epsiode: " + str(episodes))
+    track.initializePosition()
+    count = 0
+    while (track.move() == False):
+        dice = np.random.rand()
+        velocity = track.getVelocity()
+        pos = track.getPosition()
+        if dice > epsilon:
+            action = (pi[pos[0], pos[1], velocity[0], velocity[1]][0], pi[pos[0], pos[1], velocity[0], velocity[1]][1])
+        else:
+            action = (np.random.randint(-1, 2), np.random.randint(-1, 2))
+        
+        trajectory.append(((track.getPosition()[0], track.getPosition()[1], velocity[0], velocity[1]), action))
+        count += 1
+        track.increaseVelocity(action)
+        #track.printCurrentPos()
+        
+    G = 0
+    W = 1
+    temp = epsilon / number_of_actions
+    for i, t in enumerate(reversed(trajectory)):
+        G = gamma * G - 1
+        prev_optimal_action = pi[t[0][0], t[0][1], t[0][2], t[0][3]]
+        
+        if t[1][0] == prev_optimal_action[0] and t[1][1] == prev_optimal_action[1]:
+            W = W / (1 - epsilon + temp)
+        else:
+            W = W / temp
+        
+        C[int(t[0][0]), int(t[0][1]), int(t[0][2]), int(t[0][3]), int(t[1][0]) + 1, int(t[1][1]) + 1] += W
+        Q[int(t[0][0]), int(t[0][1]), int(t[0][2]), int(t[0][3]), int(t[1][0]) + 1, int(t[1][1]) + 1] += W / C[int(t[0][0]), int(t[0][1]), int(t[0][2]), int(t[0][3]), int(t[1][0]) + 1, int(t[1][1]) + 1] * (G - Q[int(t[0][0]), int(t[0][1]), int(t[0][2]), int(t[0][3]), int(t[1][0]) + 1, int(t[1][1]) + 1])
+        
+        temp1 = Q[t[0][0], t[0][1], t[0][2], t[0][3]]
+        next_action = np.argmax(temp1)
+        pi[t[0][0], t[0][1], t[0][2], t[0][3]][0] = next_action / 3
+        pi[t[0][0], t[0][1], t[0][2], t[0][3]][1] = next_action % 3
+        a = t[1][0]
+        b = t[1][1]
+        c = pi[t[0][0], t[0][1], t[0][2], t[0][3]][0]
+        d = pi[t[0][0], t[0][1], t[0][2], t[0][3]][1]
+        
+        if (c != a) or (d != b):
+            break
+    
+    epsilon *= 0.999
+    
+    if episodes % 500 == 0
+    
+while (track.move() == False):
+    velocity = track.getVelocity()
+    position = track.getPosition()
+    action = pi[position[0], position[1], velocity[0], velocity[1]]
+    trajectory.append(((track.getPosition()[0], track.getPosition()[1], velocity[0], velocity[1]), action))
+    count += 1
+    track.increaseVelocity(action)
+    track.printCurrentPos()       
