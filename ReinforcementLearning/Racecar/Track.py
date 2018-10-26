@@ -8,6 +8,7 @@ class Track:
         self.x = 0
         self.y = 0
         self.finishLine_x = 0
+        self.allowMove = False
         if self.loadMap() == False:
             self.generateMap()
             
@@ -83,6 +84,12 @@ class Track:
     def getPosition(self):
         return (self.x, self.y)
     
+    def setPositionAndVelocity(self, pos, vel):
+        self.x = pos[0]
+        self.y = pos[1]
+        self.velocity[0] = vel[0]
+        self.velocity[1] = vel[1]
+        
     def getVelocity(self):
         return np.copy(self.velocity)
     
@@ -94,8 +101,16 @@ class Track:
             self.velocity[0] += deltaV[0]
         if not ((self.velocity[1] <= -3 and deltaV[1] < 0) or (self.velocity[1] >= 3 and deltaV[1] > 0)):
             self.velocity[1] += deltaV[1]
-            
+        
+    def enableMove(self):
+        self.allowMove = True
+    
+    def disableMove(self):
+        self.allowMove = False
+        
     def move(self):
+        if self.allowMove == False:
+            return 0
         self.x = self.x + self.velocity[0]
         self.y = self.y + self.velocity[1]
         max_width, max_height = np.shape(self.map)
@@ -104,10 +119,11 @@ class Track:
             self.x = np.random.randint(0, 3)
             self.velocity[0] = 0
             self.velocity[1] = 0
+            return 1
         else:
             if self.y >= np.shape(self.map)[1] - 5 and self.x >= self.finishLine_x:
-                return True #reached finish line
-        return False
+                return 2 #reached finish line
+        return 0
             
     def printCurrentPos(self):
         for j in reversed(range(np.shape(self.map)[1])):
