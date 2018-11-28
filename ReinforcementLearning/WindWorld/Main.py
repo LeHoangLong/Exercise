@@ -4,12 +4,13 @@ Created on 15 Nov 2018
 @author: hoanglong
 '''
 
-import Environment.MapModule as MapModule
-import Environment.AgentModule as AgenModule
+import Environment.MapGeneratorModule as MapModule
+import LearningAgent.AgentModule as am
 import GUI.MainWindowModule as MainWindowModule
 import threading
 import numpy as np
-import Environment.WorldModule as WorldModule
+import Environment.SimpleWorldModule as WorldModule
+import Environment.SimpleWorldMap as WorldMapModule
 import  os
 import time
 
@@ -20,7 +21,7 @@ def console():
     global step
     global agent
     while (True):
-        a = raw_input("s: step record, p: pause, c: continuous record")
+        a = input("s: step record, p: pause, c: continuous record ")
         if a == "p":
             rec = False
             wd.pause()
@@ -41,31 +42,38 @@ def game():
     global step
     global wd
     global rec
-    agent = w.getAgent()
-    wd.markPosition(agent.getPosition()[0], agent.getPosition()[1])
+    global agent
+    x = agent.getStates()[0]
+    y = agent.getStates()[1]
+    
+    wd.markPosition(x, y)
     event = wd.getUpdateEvent()
     stepCount = 0
     while(True):
         if step == True:
-            raw_input("Press enter to continue\n")
-        w.timeStep()
-        wd.markPosition(agent.getPosition()[0], agent.getPosition()[1])
+            input("Press enter to continue\n")
+        agent.act()
+        x = agent.getStates()[0]
+        y = agent.getStates()[1]
+    
+        wd.markPosition(x, y)
         if rec == True:
             event.wait()
             event.clear()
         print("step: " + str(stepCount) + "\n")
         stepCount += 1
+        agent.learn()
 
 if __name__ == '__main__':
     rec = True
     step = False
     sem0 = threading.Semaphore(0)
     sem1 = threading.Semaphore(1)
-    m = MapModule.Map()
-    wd = MainWindowModule.MainWindow(m.getMap(), height = 600, width = 600)
-    wdMap = wd.getMap()
-    w = WorldModule.World(m.getMap())
-    agent = w.getAgent()
+    m = WorldMapModule.SimpleWorldMap()
+    wd = MainWindowModule.MainWindow(m, height = 600, width = 600)
+    w = WorldModule.SimpleWorld(m)
+    maxStates = w.getLimitOfStates()
+    agent = am.SimpleAgent(w)
     gameThread = threading.Thread(target=game)
     console = threading.Thread(target=console)
     console.start()

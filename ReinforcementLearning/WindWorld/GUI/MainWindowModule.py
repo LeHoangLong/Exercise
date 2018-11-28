@@ -4,21 +4,24 @@ Created on 15 Nov 2018
 @author: hoanglong
 '''
 
-import Tkinter as tk
+import tkinter as tk
 import numpy as np
 import copy
 import threading
 import time
+import Environment.IWorldMapModule as iwm
+
 class MainWindow(object):
     '''
     main window to display wind world game
     '''
 
 
-    def __init__(self, map, width = 500, height = 500):
+    def __init__(self, _map, width = 500, height = 500):
         '''
         Constructor
         '''
+        self.AGENT_MARK_VAl = 0
         self.top = tk.Tk()
         self.cv = tk.Canvas(self.top, bg="black")
         self.cv.config(width=width, height=height)
@@ -26,18 +29,18 @@ class MainWindow(object):
         self.prev_markedX = 0
         self.prev_markedY = 0
         self.lock = threading.Lock()
-        mapWidth, mapHeight = np.shape(map)
+        mapWidth, mapHeight = _map.getMapSize()
         
         boxWidth = width / mapWidth
         boxHeight = height / mapHeight
         
         for j in range(mapHeight):
             for i in range(mapWidth):
-                if map[i,j] == 0:
+                if _map.isPath(i, j):
                     fill = "white"
-                elif map[i,j] == 1:
+                elif _map.isObstacle(i, j):
                     fill = "gray"
-                elif map[i,j] == 2:
+                elif _map.isGoal(i, j):
                     fill = "orange"
                 else:
                     fill = "black"
@@ -48,7 +51,7 @@ class MainWindow(object):
         self.boxHeight = boxHeight
         self.mapWidth = mapWidth
         self.mapHeight = mapHeight
-        self.map = map
+        self.map = _map
         self.event = threading.Event()
     
     def getUpdateEvent(self):
@@ -56,25 +59,24 @@ class MainWindow(object):
         
     def markPosition(self, x, y):
         self.lock.acquire()
-        self.map[self.prev_markedX, self.prev_markedY] = self.prev_mark
-        self.prev_mark = self.map[x, y]
+        self.map.unmark(self.prev_markedX, self.prev_markedY)
         self.prev_markedX = x
         self.prev_markedY = y
-        self.map[x, y] = 3
+        self.map.markPositionTemporarily(x, y, self.AGENT_MARK_VAl)
         self.lock.release()
         
     def updateMap(self):
         self.lock.acquire()
         for i in range(self.mapWidth):
             for j in range(self.mapHeight):
-                if self.map[i, j] == 3:
+                if self.map.isMark(i, j, self.AGENT_MARK_VAl):
                     self.cv.create_oval(i * self.boxWidth, j * self.boxHeight, (i + 1) * self.boxWidth, (j + 1) * self.boxHeight, fill="black")
                 else:
-                    if self.map[i,j] == 0:
+                    if self.map.isPath(i, j):
                         fill = "white"
-                    elif self.map[i,j] == 1:
+                    elif self.map.isObstacle(i, j):
                         fill = "gray"
-                    elif self.map[i,j] == 2:
+                    elif self.map.isGoal(i, j):
                         fill = "orange"
                     else:
                         fill = "black"
@@ -83,7 +85,7 @@ class MainWindow(object):
         self.lock.release()       
        
     def getMap(self):
-        return copy.deepcopy(self.map)
+        return self.map
      
     def start(self):
         '''
